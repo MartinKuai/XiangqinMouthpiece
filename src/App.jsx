@@ -20,6 +20,7 @@ function App() {
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fallbackMsg, setFallbackMsg] = useState('')
   const [cooldown, setCooldown] = useState(false)
 
   const handleExampleClick = (example) => {
@@ -34,6 +35,7 @@ function App() {
     }
 
     setError('')
+    setFallbackMsg('')
     setLoading(true)
     setCooldown(true)
 
@@ -46,9 +48,9 @@ function App() {
         inviteCode,
       })
       setCards(result.cards)
-      // 如果是安全兜底，显示提示信息
+      // 如果是安全兜底，显示轻提示（不是红色错误）
       if (result.fallback && result.message) {
-        setError(result.message)
+        setFallbackMsg(result.message)
       }
     } catch (err) {
       // 根据错误类型展示不同提示
@@ -75,6 +77,7 @@ function App() {
     setMessage('')
     setCards([])
     setError('')
+    setFallbackMsg('')
   }
 
   return (
@@ -116,6 +119,11 @@ function App() {
         {cards.length > 0 && (
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4">生成结果</h2>
+            {fallbackMsg && (
+              <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+                {fallbackMsg}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {cards.map((card, index) => (
                 <ReplyCard key={index} card={card} />

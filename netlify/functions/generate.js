@@ -71,11 +71,13 @@ function buildSafeFallbackCards() {
 }
 
 // 安全兜底响应
-function safeFallbackResponse(message) {
+function safeFallbackResponse(logReason) {
+  // 技术原因只写入日志，不暴露给前端
+  console.log('[generate] fallback triggered', { reason: logReason })
   return jsonResponse(200, {
     fallback: true,
     code: 'SAFE_FALLBACK',
-    message: message || '这句话可能触发模型安全策略，已切换为克制版兜底回复。',
+    message: '这句有点冲，已切换为克制版回复。',
     cards: buildSafeFallbackCards(),
     safetyNote: '已避免复述脏话、人身攻击或升级冲突。',
   })
@@ -317,11 +319,11 @@ export const handler = async (event) => {
           result = JSON.parse(jsonMatch[0])
         } catch (e2) {
           // JSON 提取后仍然解析失败，返回安全兜底
-          return safeFallbackResponse('模型返回内容无法解析，已切换为兜底回复。')
+          return safeFallbackResponse('MODEL_CONTENT_PARSE_FAILED')
         }
       } else {
         // 无法提取 JSON，返回安全兜底
-        return safeFallbackResponse('模型返回内容无法解析，已切换为兜底回复。')
+        return safeFallbackResponse('MODEL_CONTENT_PARSE_FAILED')
       }
     }
 
@@ -329,7 +331,7 @@ export const handler = async (event) => {
     if (!result.cards || !Array.isArray(result.cards) || result.cards.length !== 4) {
       // 返回结构不符合要求，返回安全兜底
       console.log('[generate] final response', { requestId, code: 'SAFE_FALLBACK', statusCode: 200, fallback: true })
-      return safeFallbackResponse('模型返回格式不符合要求，已切换为兜底回复。')
+      return safeFallbackResponse('MODEL_INVALID_FORMAT')
     }
 
     console.log('[generate] final response', { requestId, code: 'SUCCESS', statusCode: 200, fallback: false })
