@@ -7,7 +7,7 @@ import IntensitySelector from './components/IntensitySelector.jsx'
 import ExampleGallery from './components/ExampleGallery.jsx'
 import ReplyCard from './components/ReplyCard.jsx'
 import SafetyNotice from './components/SafetyNotice.jsx'
-import AccessCodeInput from './components/AccessCodeInput.jsx'
+import InviteCodeInput from './components/InviteCodeInput.jsx'
 import { generateReplies } from './lib/apiClient.js'
 import { validateInput } from './lib/validators.js'
 
@@ -16,7 +16,7 @@ function App() {
   const [scenario, setScenario] = useState('')
   const [perspective, setPerspective] = useState('不指定')
   const [intensity, setIntensity] = useState('有刺但不脏')
-  const [accessCode, setAccessCode] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -43,7 +43,7 @@ function App() {
         scenario,
         perspective,
         intensity,
-        accessCode,
+        inviteCode,
       })
       setCards(result.cards)
     } catch (err) {
@@ -81,7 +81,7 @@ function App() {
             <IntensitySelector intensity={intensity} setIntensity={setIntensity} />
           </div>
 
-          <AccessCodeInput accessCode={accessCode} setAccessCode={setAccessCode} />
+          <InviteCodeInput inviteCode={inviteCode} setInviteCode={setInviteCode} />
 
           <button
             onClick={handleGenerate}

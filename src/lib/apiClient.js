@@ -1,6 +1,6 @@
 const API_ENDPOINT = '/.netlify/functions/generate'
 
-export async function generateReplies({ message, scenario, perspective, intensity, accessCode }) {
+export async function generateReplies({ message, scenario, perspective, intensity, inviteCode }) {
   const response = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -11,7 +11,7 @@ export async function generateReplies({ message, scenario, perspective, intensit
       scenario,
       perspective,
       intensity,
-      accessCode,
+      inviteCode,
     }),
   })
 

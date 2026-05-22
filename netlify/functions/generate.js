@@ -27,6 +27,15 @@ loadEnvLocal()
 
 const MAX_MESSAGE_LENGTH = 120
 
+// 统一 JSON 响应 helper
+function jsonResponse(statusCode, data) {
+  return {
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }
+}
+
 const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬场面的AI回复生成器。
 
 你的任务是：根据用户输入的相亲对象发言，生成4种不同风格的回复。
@@ -113,10 +122,7 @@ const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬�
 export const handler = async (event) => {
   // 只接受 POST
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: '只接受POST请求' }),
-    }
+    return jsonResponse(405, { error: '只接受POST请求' })
   }
 
   // 解析请求体
@@ -124,36 +130,26 @@ export const handler = async (event) => {
   try {
     body = JSON.parse(event.body)
   } catch (e) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: '请求格式错误' }),
-    }
+    return jsonResponse(400, { error: '请求格式错误' })
   }
 
-  const { message, scenario, perspective, intensity, accessCode } = body
+  const { message, scenario, perspective, intensity, inviteCode: submittedInviteCode } = body
+  // 兼容旧字段 accessCode
+  const inviteCode = submittedInviteCode ?? body.accessCode ?? ''
 
   // 校验输入
   if (!message || message.trim() === '') {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: '请输入相亲对象的发言' }),
-    }
+    return jsonResponse(400, { error: '请输入相亲对象的发言' })
   }
 
   if (message.length > MAX_MESSAGE_LENGTH) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: `输入不能超过${MAX_MESSAGE_LENGTH}字` }),
-    }
+    return jsonResponse(400, { error: `输入不能超过${MAX_MESSAGE_LENGTH}字` })
   }
 
-  // 校验访问码
-  const requiredAccessCode = process.env.DEMO_ACCESS_CODE
-  if (requiredAccessCode && accessCode !== requiredAccessCode) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({ error: '访问码错误' }),
-    }
+  // 校验邀请码（使用 trim 后的值比较，避免环境变量首尾空格问题）
+  const requiredInviteCode = process.env.DEMO_INVITE_CODE?.trim()
+  if (requiredInviteCode && inviteCode !== requiredInviteCode) {
+    return jsonResponse(401, { error: '邀请码不正确，无法生成。' })
   }
 
   // 读取环境变量（支持 MODEL_* 新变量和 DEEPSEEK_* 旧变量 fallback）
@@ -162,24 +158,15 @@ export const handler = async (event) => {
   const model = process.env.MODEL_NAME || process.env.DEEPSEEK_MODEL
 
   if (!apiKey) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: '服务端模型 API Key 未配置，请设置 MODEL_API_KEY。' }),
-    }
+    return jsonResponse(500, { error: '服务端模型 API Key 未配置，请设置 MODEL_API_KEY。' })
   }
 
   if (!baseUrl) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: '服务端模型 Base URL 未配置，请设置 MODEL_BASE_URL。' }),
-    }
+    return jsonResponse(500, { error: '服务端模型 Base URL 未配置，请设置 MODEL_BASE_URL。' })
   }
 
   if (!model) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: '服务端模型名称未配置，请设置 MODEL_NAME。' }),
-    }
+    return jsonResponse(500, { error: '服务端模型名称未配置，请设置 MODEL_NAME。' })
   }
 
   // 构建用户消息
@@ -215,20 +202,14 @@ export const handler = async (event) => {
 
     if (!response.ok) {
       console.error('API error:', response.status, response.statusText)
-      return {
-        statusCode: 502,
-        body: JSON.stringify({ error: 'AI服务暂时不可用，请稍后重试' }),
-      }
+      return jsonResponse(502, { error: 'AI服务暂时不可用，请稍后重试' })
     }
 
     const data = await response.json()
     const content = data.choices[0]?.message?.content
 
     if (!content) {
-      return {
-        statusCode: 502,
-        body: JSON.stringify({ error: 'AI返回内容为空' }),
-      }
+      return jsonResponse(502, { error: 'AI返回内容为空' })
     }
 
     // 解析 JSON
@@ -251,15 +232,9 @@ export const handler = async (event) => {
       throw new Error('AI返回格式不符合要求')
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result),
-    }
+    return jsonResponse(200, result)
   } catch (error) {
     console.error('Generate error:', error)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: '生成失败，请稍后重试' }),
-    }
+    return jsonResponse(500, { error: '生成失败，请稍后重试' })
   }
 }

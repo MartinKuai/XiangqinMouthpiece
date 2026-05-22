@@ -44,7 +44,7 @@ MODEL_PROVIDER=mimo
 MODEL_API_KEY=你的Mimo API Key
 MODEL_BASE_URL=从Mimo控制台获取的OpenAI-compatible Base URL
 MODEL_NAME=从Mimo控制台获取的模型名
-DEMO_ACCESS_CODE=可选访问码
+DEMO_INVITE_CODE=可选邀请码
 ```
 
 > **重要**：不要把真实 API Key 提交到 Git 仓库。`.env.local` 已在 `.gitignore` 中。
@@ -92,11 +92,14 @@ npm run build
    - Build command: `npm run build`
    - Publish directory: `dist`
 4. 设置环境变量：
-   - `MODEL_PROVIDER`: mimo（可选，仅用于标识）
-   - `MODEL_API_KEY`: 你的 API Key
-   - `MODEL_BASE_URL`: 从 Mimo 控制台获取的 Base URL
-   - `MODEL_NAME`: 从 Mimo 控制台获取的模型名
-   - `DEMO_ACCESS_CODE`: 演示访问码（可选）
+
+   | 变量名 | 值 | 标记为 Secret |
+   |--------|-----|---------------|
+   | `MODEL_PROVIDER` | `mimo` | **否** |
+   | `MODEL_BASE_URL` | 从 Mimo 控制台获取 | **否** |
+   | `MODEL_NAME` | 从 Mimo 控制台获取 | **否** |
+   | `MODEL_API_KEY` | 你的 API Key | **是（必须）** |
+   | `DEMO_INVITE_CODE` | 演示邀请码（可选） | **是（建议）** |
 5. 部署
 
 详细步骤见 `docs/DEPLOY_NETLIFY.md`

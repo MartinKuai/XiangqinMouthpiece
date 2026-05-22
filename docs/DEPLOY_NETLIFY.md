@@ -42,13 +42,13 @@ git push -u origin main
 2. 左侧菜单选择 "Environment variables"
 3. 添加以下变量：
 
-| 变量名 | 值 | 说明 |
-|--------|-----|------|
-| `MODEL_PROVIDER` | `mimo` | 可选 - 仅用于标识，不影响调用 |
-| `MODEL_API_KEY` | `your_api_key_here` | **必填** - 从 Mimo 控制台获取的 API Key |
-| `MODEL_BASE_URL` | `从Mimo控制台获取` | **必填** - OpenAI-compatible Base URL（需包含 `/v1`） |
-| `MODEL_NAME` | `从Mimo控制台获取` | **必填** - 模型名称 |
-| `DEMO_ACCESS_CODE` | `your_access_code` | 可选 - 演示访问码 |
+| 变量名 | 值 | 标记为 Secret | 说明 |
+|--------|-----|---------------|------|
+| `MODEL_PROVIDER` | `mimo` | **否** | 可选 - 仅用于标识 |
+| `MODEL_API_KEY` | `your_api_key_here` | **是（必须）** | **必填** - API Key |
+| `MODEL_BASE_URL` | `从Mimo控制台获取` | **否** | **必填** - 需包含 `/v1` |
+| `MODEL_NAME` | `从Mimo控制台获取` | **否** | **必填** - 模型名称 |
+| `DEMO_INVITE_CODE` | `your_invite_code` | **是（建议）** | 可选 - 邀请码 |
 
 4. 点击 "Save"
 
@@ -144,7 +144,7 @@ Vite 开发服务器已配置代理，生产环境通过 Netlify Functions 代�
 
 - Netlify 免费域名 `xxx.netlify.app` 只是部署域名免费
 - AI API 调用成本由模型服务商计费（Mimo、DeepSeek 等）
-- 不要公开无访问码的演示链接，避免 API 被刷
+- 不要公开无邀请码的演示链接，避免 API 被刷
 
 ## 监控和日志
 

@@ -38,7 +38,7 @@
 | AI模型 | DeepSeek API | 国内稳定，成本可控 |
 | 后端 | Netlify Functions | 免费，部署简单 |
 | API Key | 只放服务端 | 安全最佳实践 |
-| 访问码 | 可选开关 | 灵活控制 |
+| 邀请码 | 可选开关 | 灵活控制 |
 | 编程梗 | 限制高门槛 | 保持低门槛 |
 | 语言 | JavaScript | 开发快，不强制TS |
 
@@ -68,7 +68,7 @@
 | `src/components/ExampleGallery.jsx` | 新建，示例画廊组件 |
 | `src/components/ReplyCard.jsx` | 新建，回复卡片组件 |
 | `src/components/SafetyNotice.jsx` | 新建，安全提示组件 |
-| `src/components/AccessCodeInput.jsx` | 新建，访问码输入组件 |
+| `src/components/InviteCodeInput.jsx` | 新建，邀请码输入组件 |
 | `netlify/functions/generate.js` | 新建，Serverless函数 |
 | `docs/PROJECT_BRIEF.md` | 新建，项目简介 |
 | `docs/STYLE_GUIDE.md` | 新建，风格指南 |

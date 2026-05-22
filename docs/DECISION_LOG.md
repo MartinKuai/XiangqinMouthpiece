@@ -101,7 +101,7 @@
 
 ---
 
-### DEC-005: 保留访问码开关
+### DEC-005: 保留邀请码开关
 
 **Date**: 2026-05-23
 **Status**: Accepted
@@ -110,18 +110,18 @@
 **Context**: 需要控制Demo访问权限
 
 **Options Considered**:
-1. 无访问码：任何人都能用，可能被滥用
-2. 固定访问码：所有人用同一个码
-3. 可选访问码：设置了才启用，不设置不阻塞
+1. 无邀请码：任何人都能用，可能被滥用
+2. 固定邀请码：所有人用同一个码
+3. 可选邀请码：设置了才启用，不设置不阻塞
 
-**Decision**: 可选访问码DEMO_ACCESS_CODE
+**Decision**: 可选邀请码 DEMO_INVITE_CODE
 
 **Rationale**:
 - 可以控制Demo访问范围
 - 不设置时不阻塞使用，方便测试
 - 灵活性高
 
-**Trade-offs**: 需要前端携带访问码
+**Trade-offs**: 需要前端携带邀请码
 
 ---
 
@@ -201,3 +201,34 @@
 - 保留 DEEPSEEK_* fallback 只是为了兼容旧配置
 
 **Trade-offs**: 旧部署环境需要更新环境变量
+
+---
+
+### DEC-009: 最小侵入式邀请码保护
+
+**Date**: 2026-05-23
+**Status**: Accepted
+**Category**: Security
+
+**Context**: 需要保护演示站点不被滥用，但不引入复杂认证系统
+
+**Options Considered**:
+1. 无邀请码：任何人都能用，可能被滥用
+2. 固定邀请码：所有人用同一个码
+3. 可选邀请码：设置了才启用，不设置不阻塞
+
+**Decision**: 可选邀请码 DEMO_INVITE_CODE，未设置时不阻塞
+
+**Rationale**:
+- 可以控制 Demo 访问范围
+- 不设置时不阻塞使用，方便测试
+- 灵活性高，适合作品集展示
+- 最小侵入式，不引入登录/注册系统
+
+**Trade-offs**: 需要前端携带邀请码
+
+**Implementation**:
+- 后端读取 `process.env.DEMO_INVITE_CODE`
+- 如果为空或未设置，跳过校验
+- 如果设置了，必须完全匹配，否则返回 401
+- 邀请码错误时不调用 Mimo API

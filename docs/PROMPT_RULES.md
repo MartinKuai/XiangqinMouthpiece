@@ -8,7 +8,7 @@
 | scenario | string | 否 | 场景标签 |
 | perspective | string | 否 | 用户视角（不指定/男生视角/女生视角） |
 | intensity | string | 否 | 冒犯强度（温和可发/有刺但不脏/抽象整活） |
-| accessCode | string | 否 | 访问码 |
+| inviteCode | string | 否 | 邀请码 |
 
 ## 输出 JSON Schema
 
@@ -116,7 +116,7 @@
 ### 输入校验
 - message 不能为空
 - message 不能超过 120 字
-- accessCode 校验（如果设置了 DEMO_ACCESS_CODE）
+- inviteCode 校验（如果设置了 DEMO_INVITE_CODE）
 
 ## 示例 Prompt 结构
 
