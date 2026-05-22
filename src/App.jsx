@@ -47,7 +47,16 @@ function App() {
       })
       setCards(result.cards)
     } catch (err) {
-      setError(err.message || '生成失败，请稍后重试')
+      // 根据错误类型展示不同提示
+      if (err.status === 401) {
+        setError('邀请码不正确，无法生成。')
+      } else if (err.code === 'CONTENT_SAFETY_BLOCKED') {
+        setError(err.message || '这句话可能触发内容安全策略，建议把原话改成场景描述后再试。')
+      } else if (err.code === 'MODEL_ERROR' || err.code === 'EMPTY_RESPONSE') {
+        setError(err.message || '模型暂时无法处理这类输入，建议换一种描述方式再试。')
+      } else {
+        setError('服务暂时不可用，请稍后再试。')
+      }
     } finally {
       setLoading(false)
       setTimeout(() => setCooldown(false), 5000)

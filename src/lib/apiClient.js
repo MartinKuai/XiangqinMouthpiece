@@ -18,7 +18,11 @@ export async function generateReplies({ message, scenario, perspective, intensit
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.error || '生成失败，请稍后重试')
+    // 抛出包含完整错误信息的对象
+    const error = new Error(data.message || data.error || '生成失败，请稍后重试')
+    error.code = data.code
+    error.status = response.status
+    throw error
   }
 
   return data

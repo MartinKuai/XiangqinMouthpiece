@@ -40,6 +40,11 @@ const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬�
 
 你的任务是：根据用户输入的相亲对象发言，生成4种不同风格的回复。
 
+【重要前提】
+用户输入的是"相亲对象说出的原话"，可能包含冒犯、辱骂、人身攻击或低素质表达。
+你的任务不是复述、放大或升级这些攻击，而是生成"有边界、轻反击、不过度攻击"的回复。
+如果原话过于粗鄙，请转化成更克制、更有边界的回应。
+
 【核心风格】
 低门槛、短反转、轻冒犯、别装。
 - 表面平静，实际反客为主
@@ -63,11 +68,13 @@ const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬�
 【安全边界】
 - 可以讽刺具体发言，但不要攻击对方这个人
 - 可以轻微阴阳怪气，但不能使用脏话
+- 不输出脏话、辱骂、人身攻击
 - 不攻击性别、地域、年龄、长相、身材、学历、收入、职业、家庭背景
 - 不输出PUA、吊着对方、情绪操控、欺骗式回复
 - 不输出厌男、厌女或制造性别对立的内容
 - 不生成性羞辱、荡妇羞辱、外貌羞辱、收入羞辱
-- 如果用户输入包含明显辱骂、仇恨、性骚扰、暴力或极端内容，返回安全回应，不要升级冲突
+- 不煽动骚扰、报复或持续纠缠
+- 如果用户输入包含明显辱骂、人身攻击或低素质表达，请转化成更克制、更有边界的回应，不要升级冲突
 
 【输出要求】
 请严格按照以下JSON格式输出，不要输出任何其他内容：
@@ -201,15 +208,36 @@ export const handler = async (event) => {
     })
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMsg = errorData?.error?.message || ''
+
+      // 内容安全拒绝
+      if (response.status === 400 && (errorMsg.includes('safety') || errorMsg.includes('content') || errorMsg.includes('filter') || errorMsg.includes('reject'))) {
+        return jsonResponse(400, {
+          error: '这类输入可能触发内容安全策略',
+          code: 'CONTENT_SAFETY_BLOCKED',
+          message: '这句话包含明显辱骂或人身攻击，模型可能拒绝生成。你可以把原话改成场景描述后再试，例如："对方用脏话骂我，我想礼貌但有边界地回一句。"',
+        })
+      }
+
+      // 其他 API 错误
       console.error('API error:', response.status, response.statusText)
-      return jsonResponse(502, { error: 'AI服务暂时不可用，请稍后重试' })
+      return jsonResponse(502, {
+        error: 'AI服务暂时不可用',
+        code: 'MODEL_ERROR',
+        message: '模型暂时无法处理这类输入，建议换一种描述方式再试。',
+      })
     }
 
     const data = await response.json()
     const content = data.choices[0]?.message?.content
 
     if (!content) {
-      return jsonResponse(502, { error: 'AI返回内容为空' })
+      return jsonResponse(502, {
+        error: 'AI返回内容为空',
+        code: 'EMPTY_RESPONSE',
+        message: '模型未返回有效内容，请换一种描述方式再试。',
+      })
     }
 
     // 解析 JSON
