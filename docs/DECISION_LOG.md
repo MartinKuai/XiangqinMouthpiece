@@ -232,3 +232,48 @@
 - 如果为空或未设置，跳过校验
 - 如果设置了，必须完全匹配，否则返回 401
 - 邀请码错误时不调用 Mimo API
+
+---
+
+### DEC-010: Netlify 部署策略优化
+
+**Date**: 2026-05-23
+**Status**: Accepted
+**Category**: Operations
+
+**Context**: Netlify Free plan credits 消耗较快，production deploy 每次会消耗 15 credits
+
+**Decision**: 默认只做本地修改和本地验收，不自动执行 production deploy
+
+**Rationale**:
+- Netlify Free plan credits 已消耗 75%
+- production deploy 每次消耗 15 credits
+- 本项目由 GitHub 仓库导入 Netlify，push 到 main 分支会触发自动部署
+
+**Deployment Rules**:
+1. 默认只做本地修改和本地验收
+2. 本地运行 `npm run build`
+3. 本地测试 `netlify dev`
+4. 没有用户明确说"部署到 production"，不执行 `netlify deploy --prod`
+5. README、docs、文案类修改默认只 commit，不 push，不部署
+6. 只有以下情况才建议 production deploy：
+   - Function 逻辑修复完成
+   - 页面核心功能修复完成
+   - 用户要对外展示最终版本
+   - 用户明确授权部署
+7. 每次准备 push 前必须提醒："GitHub push 可能触发 Netlify 自动部署并消耗 credits，是否确认？"
+8. 每次准备 production deploy 前必须提醒："production deploy 可能消耗 Netlify credits，是否确认？"
+9. 如果只是为了保存本地修改，优先 git commit，不要 push
+10. 如果必须 push 但不希望触发 Netlify build，可考虑在 commit message 中加入 `[skip netlify]`，但仍需用户确认
+11. 更稳妥的做法是在 Netlify 后台 Stop builds 后再 push
+
+**Forbidden Operations** (without explicit user confirmation):
+- `git push`
+- `netlify deploy --prod`
+- `netlify deploy`
+- `netlify sites:create`
+- `netlify unlink`
+- `netlify link`
+- Any API request that modifies Netlify site configuration
+
+**Trade-offs**: 增加本地验证步骤，但节省 credits

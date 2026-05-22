@@ -1,5 +1,47 @@
 # Deploy to Netlify - 部署指南
 
+> **⚠️ 部署策略提醒（DEC-010）**
+> Netlify Free plan credits 已消耗 75%，每次 production deploy 消耗 15 credits。
+> 本项目由 GitHub 仓库导入 Netlify，push 到 main 分支会触发自动部署。
+> 详见 `docs/DECISION_LOG.md` - DEC-010。
+
+## 防误部署工作流（必读）
+
+### 日常开发只允许
+
+```bash
+npm run build    # 本地构建
+netlify dev      # 本地测试
+```
+
+### 禁止操作（除非明确授权）
+
+- `git push` - 会触发 Netlify 自动部署
+- `netlify deploy --prod` - 会消耗 15 credits
+- `netlify deploy` - 会消耗 credits
+- 任何修改 Netlify 站点配置的 API 请求
+
+### 提醒规则
+
+每次准备 push 或 deploy 前，必须先提醒：
+
+> "该操作可能触发 Netlify 部署并消耗 credits，是否确认？"
+
+### 更稳妥的做法
+
+在 Netlify 后台 **Stop builds** 后再 push：
+
+```
+Netlify Dashboard
+→ xiangqinmouthpiece project
+→ Project configuration
+→ Build & deploy
+→ Continuous deployment
+→ Build settings
+→ Configure
+→ Build status: Stopped builds
+```
+
 ## 前置条件
 
 - GitHub 账户
