@@ -36,6 +36,51 @@ function jsonResponse(statusCode, data) {
   }
 }
 
+// 安全兜底卡片
+function buildSafeFallbackCards() {
+  return [
+    {
+      type: '真发版',
+      reply: '我们还是好好说话吧，别把相亲聊成吵架现场。',
+      styleTag: '温和化解',
+      sceneNote: '用轻松语气缓和气氛，不接攻击',
+      riskLevel: '适合真发',
+    },
+    {
+      type: '阴阳版',
+      reply: '这个开场挺省时间的，素质筛选一步到位。',
+      styleTag: '微讽边界',
+      sceneNote: '暗示对方表达不当，但不升级冲突',
+      riskLevel: '看关系',
+    },
+    {
+      type: '日常脑回路错位版',
+      reply: '这句我先当成输入法事故处理。',
+      styleTag: '生活类比',
+      sceneNote: '用技术故障化解尴尬，不接招',
+      riskLevel: '看关系',
+    },
+    {
+      type: '抽象整活版',
+      reply: '收到，已放入"不适合继续聊"文件夹。',
+      styleTag: '抽象整活',
+      sceneNote: '用文件管理比喻，轻松化解',
+      riskLevel: '仅供整活',
+    },
+  ]
+}
+
+// 安全兜底响应
+function safeFallbackResponse(message) {
+  return jsonResponse(200, {
+    fallback: true,
+    code: 'SAFE_FALLBACK',
+    message: message || '这句话可能触发模型安全策略，已切换为克制版兜底回复。',
+    cards: buildSafeFallbackCards(),
+    safetyNote: '已避免复述脏话、人身攻击或升级冲突。',
+  })
+}
+
 const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬场面的AI回复生成器。
 
 你的任务是：根据用户输入的相亲对象发言，生成4种不同风格的回复。
@@ -127,6 +172,9 @@ const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲尴尬�
 - 只输出JSON，不要输出Markdown或其他内容`
 
 export const handler = async (event) => {
+  // 生成请求 ID（用于日志追踪）
+  const requestId = Math.random().toString(36).slice(2, 10)
+
   // 只接受 POST
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: '只接受POST请求' })
@@ -190,6 +238,15 @@ export const handler = async (event) => {
 
   try {
     // 调用 OpenAI-compatible chat completions API
+    console.log('[generate] request received', {
+      requestId,
+      hasMessage: Boolean(message),
+      messageLength: message?.length || 0,
+      hasInviteCode: Boolean(inviteCode),
+      modelProvider: process.env.MODEL_PROVIDER,
+      modelName: process.env.MODEL_NAME,
+    })
+
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -232,6 +289,13 @@ export const handler = async (event) => {
     const data = await response.json()
     const content = data.choices[0]?.message?.content
 
+    console.log('[generate] upstream result', {
+      requestId,
+      upstreamStatus: response.status,
+      hasChoices: Boolean(data?.choices?.length),
+      hasContent: Boolean(content),
+    })
+
     if (!content) {
       return jsonResponse(502, {
         error: 'AI返回内容为空',
@@ -249,20 +313,33 @@ export const handler = async (event) => {
       // 如果直接解析失败，尝试提取 JSON
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        result = JSON.parse(jsonMatch[0])
+        try {
+          result = JSON.parse(jsonMatch[0])
+        } catch (e2) {
+          // JSON 提取后仍然解析失败，返回安全兜底
+          return safeFallbackResponse('模型返回内容无法解析，已切换为兜底回复。')
+        }
       } else {
-        throw new Error('无法解析AI返回内容')
+        // 无法提取 JSON，返回安全兜底
+        return safeFallbackResponse('模型返回内容无法解析，已切换为兜底回复。')
       }
     }
 
     // 验证返回结构
     if (!result.cards || !Array.isArray(result.cards) || result.cards.length !== 4) {
-      throw new Error('AI返回格式不符合要求')
+      // 返回结构不符合要求，返回安全兜底
+      console.log('[generate] final response', { requestId, code: 'SAFE_FALLBACK', statusCode: 200, fallback: true })
+      return safeFallbackResponse('模型返回格式不符合要求，已切换为兜底回复。')
     }
 
+    console.log('[generate] final response', { requestId, code: 'SUCCESS', statusCode: 200, fallback: false })
     return jsonResponse(200, result)
   } catch (error) {
-    console.error('Generate error:', error)
-    return jsonResponse(500, { error: '生成失败，请稍后重试' })
+    console.error('[generate] internal error:', error.message)
+    return jsonResponse(500, {
+      error: '生成失败',
+      code: 'INTERNAL_ERROR',
+      message: '服务暂时不可用，请稍后再试。',
+    })
   }
 }
