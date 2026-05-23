@@ -1,4 +1,4 @@
-const API_ENDPOINT = '/.netlify/functions/generate'
+const API_ENDPOINT = '/api/generate'
 
 export async function generateReplies({ message, scenario, perspective, intensity, inviteCode }) {
   const response = await fetch(API_ENDPOINT, {

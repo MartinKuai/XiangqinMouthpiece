@@ -277,3 +277,38 @@
 - Any API request that modifies Netlify site configuration
 
 **Trade-offs**: 增加本地验证步骤，但节省 credits
+
+---
+
+### DEC-011: 迁移到 Cloudflare Pages 作为主部署平台
+
+**Date**: 2026-05-23
+**Status**: Accepted
+**Category**: Operations
+
+**Context**: Netlify Free plan credits 消耗较快，需要选择更经济的部署方案
+
+**Options Considered**:
+1. 继续使用 Netlify：credits 消耗快，免费额度有限
+2. 迁移到 Cloudflare Pages：免费额度充足，冷启动更快
+3. 迁移到 Vercel：类似方案，但免费额度有限
+
+**Decision**: 迁移到 Cloudflare Pages + Pages Functions 作为主部署平台
+
+**Rationale**:
+- Cloudflare Pages 免费额度充足（无限构建、无限请求）
+- Cloudflare Pages Functions 冷启动更快（边缘计算）
+- 保留 Netlify 配置作为历史兼容
+- 未来可随时切换回 Netlify
+
+**Implementation**:
+- 新增 `functions/api/generate.js`（Cloudflare Pages Function）
+- 前端请求路径改为 `/api/generate`
+- 新增 `wrangler.toml` 配置
+- 本地开发使用 `wrangler pages dev dist`
+
+**Trade-offs**: 需要学习新的部署流程
+
+---
+
+*Add new decisions below this line*

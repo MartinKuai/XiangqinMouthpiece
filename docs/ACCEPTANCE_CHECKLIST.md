@@ -25,14 +25,15 @@
 
 ### API 功能
 
-- [ ] AC-A01: 前端请求 Netlify Function
+- [ ] AC-A01: 前端请求 Cloudflare Pages Function (/api/generate)
 - [ ] AC-A02: 服务端读取环境变量
 - [ ] AC-A03: API Key 不出现在前端 bundle
 - [ ] AC-A04: API 未配置时有明确错误
-- [ ] AC-A05: 邀请码设置后能校验
-- [ ] AC-A06: 邀请码不设置时不阻塞使用
-- [ ] AC-A07: 邀请码错误时返回 401 且不调用 Mimo API
-- [ ] AC-A08: DEMO_INVITE_CODE 建议标记为 secret
+- [ ] AC-A05: 访问码设置后能校验
+- [ ] AC-A06: 访问码未设置时不阻塞使用
+- [ ] AC-A07: 访问码错误时返回 401 且不调用 Mimo API
+- [ ] AC-A08: DEMO_ACCESS_CODE 建议标记为 secret
+- [ ] AC-A09: 所有错误返回都是 JSON
 
 ### 内容质量
 
@@ -51,8 +52,9 @@
 
 - [ ] AC-D01: docs 文件齐全
 - [ ] AC-D02: README.md 说明如何本地运行
-- [ ] AC-D03: DEPLOY_NETLIFY.md 说明如何上线
-- [ ] AC-D04: PORTFOLIO_PACKAGE.md 可直接用于作品集说明
+- [ ] AC-D03: DEPLOY_CLOUDFLARE.md 说明如何部署到 Cloudflare Pages
+- [ ] AC-D04: DEPLOY_NETLIFY.md 保留历史兼容部署说明
+- [ ] AC-D05: PORTFOLIO_PACKAGE.md 可直接用于作品集说明
 
 ## 验证日志
 

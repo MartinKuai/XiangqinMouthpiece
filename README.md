@@ -16,9 +16,9 @@
 ## 技术栈
 
 - **前端**: React + Vite + Tailwind CSS + JavaScript
-- **后端**: Netlify Functions
+- **后端**: Cloudflare Pages Functions（主部署）
 - **AI**: OpenAI-compatible API（支持 Mimo、DeepSeek 或其他兼容服务）
-- **部署**: Netlify
+- **部署**: Cloudflare Pages（主部署）
 
 ## 本地运行
 
@@ -31,23 +31,29 @@ npm install
 
 ### 2. 配置环境变量
 
-复制 `.env.example` 为 `.env.local`，填入你的 API 配置：
+#### Cloudflare Pages 本地开发（推荐）
+
+复制 `.dev.vars.example` 为 `.dev.vars`，填入你的 API 配置：
 
 ```bash
-cp .env.example .env.local
+cp .dev.vars.example .dev.vars
 ```
 
-编辑 `.env.local`：
+编辑 `.dev.vars`：
 
 ```
 MODEL_PROVIDER=mimo
 MODEL_API_KEY=你的Mimo API Key
-MODEL_BASE_URL=从Mimo控制台获取的OpenAI-compatible Base URL
-MODEL_NAME=从Mimo控制台获取的模型名
-DEMO_INVITE_CODE=可选邀请码
+MODEL_BASE_URL=https://api.xiaomimimo.com/v1
+MODEL_NAME=mimo-v2-flash
+DEMO_ACCESS_CODE=可选访问码
 ```
 
-> **重要**：不要把真实 API Key 提交到 Git 仓库。`.env.local` 已在 `.gitignore` 中。
+#### Netlify 本地开发（历史兼容）
+
+复制 `.env.example` 为 `.env.local`，填入你的 API 配置。
+
+> **重要**：不要把真实 API Key 提交到 Git 仓库。`.env.local` 和 `.dev.vars` 已在 `.gitignore` 中。
 
 ### 3. 启动开发服务器
 
@@ -59,20 +65,25 @@ npm run dev
 
 浏览器访问 http://localhost:5173
 
-**前后端联调**（需要调用API时）：
+**Cloudflare Pages 本地开发**（推荐，需要调用API时）：
+
+```bash
+npm run build
+npx wrangler pages dev dist
+```
+
+浏览器访问 http://localhost:8788
+
+**Netlify 本地开发**（历史兼容）：
 
 ```bash
 npm install -g netlify-cli
 netlify dev --offline
 ```
 
-这会同时启动Vite和Netlify Functions，浏览器访问 http://localhost:8888
+浏览器访问 http://localhost:8888
 
-> 注意：`npm run dev`只启动前端，无法调用后端API。如需测试生成功能，请使用`netlify dev --offline`。
->
-> `--offline` 参数用于本地开发，不需要登录 Netlify 账户。
-
-> 未配置 `MODEL_API_KEY` 时，调用 generate 函数会返回 `"服务端模型 API Key 未配置"` 错误，这是预期行为，说明函数正常工作。
+> 注意：`npm run dev` 只启动前端，无法调用后端API。如需测试生成功能，请使用 `wrangler pages dev` 或 `netlify dev`。
 
 ## 构建和部署
 
@@ -84,14 +95,15 @@ npm run build
 
 构建产物在 `dist/` 目录。
 
-### 部署到 Netlify
+### 部署到 Cloudflare Pages（主部署）
 
 1. 推送到 GitHub
-2. 在 Netlify 选择仓库
-3. 配置构建设置：
+2. 在 Cloudflare Dashboard 创建 Pages 项目
+3. 连接 GitHub 仓库
+4. 配置构建设置：
    - Build command: `npm run build`
-   - Publish directory: `dist`
-4. 设置环境变量：
+   - Build output directory: `dist`
+5. 设置环境变量：
 
    | 变量名 | 值 | 标记为 Secret |
    |--------|-----|---------------|
@@ -99,10 +111,14 @@ npm run build
    | `MODEL_BASE_URL` | 从 Mimo 控制台获取 | **否** |
    | `MODEL_NAME` | 从 Mimo 控制台获取 | **否** |
    | `MODEL_API_KEY` | 你的 API Key | **是（必须）** |
-   | `DEMO_INVITE_CODE` | 演示邀请码（可选） | **是（建议）** |
-5. 部署
+   | `DEMO_ACCESS_CODE` | 演示访问码（可选） | **是（建议）** |
+6. 部署
 
-详细步骤见 `docs/DEPLOY_NETLIFY.md`
+详细步骤见 `docs/DEPLOY_CLOUDFLARE.md`
+
+### 部署到 Netlify（历史兼容）
+
+项目保留了 Netlify 配置文件，仍可部署到 Netlify。详细步骤见 `docs/DEPLOY_NETLIFY.md`
 
 ## 功能特性
 
@@ -122,7 +138,8 @@ npm run build
 - [风格指南](docs/STYLE_GUIDE.md)
 - [Prompt规则](docs/PROMPT_RULES.md)
 - [验收清单](docs/ACCEPTANCE_CHECKLIST.md)
-- [部署指南](docs/DEPLOY_NETLIFY.md)
+- [Cloudflare 部署指南](docs/DEPLOY_CLOUDFLARE.md)
+- [Netlify 部署指南](docs/DEPLOY_NETLIFY.md)（历史兼容）
 - [决策日志](docs/DECISION_LOG.md)
 - [作品集包装](docs/PORTFOLIO_PACKAGE.md)
 

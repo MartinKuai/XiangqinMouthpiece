@@ -23,6 +23,10 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Netlify
+# Netlify (legacy)
 .netlify/
 deno.lock
+
+# Cloudflare
+.wrangler/
+.dev.vars

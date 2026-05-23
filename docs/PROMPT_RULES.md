@@ -178,4 +178,16 @@ Prompt 与业务逻辑不依赖具体供应商，只需配置正确的环境变�
 
 ---
 
+## 部署说明
+
+当前主部署平台：**Cloudflare Pages + Pages Functions**
+
+- 前端请求路径：`/api/generate`
+- 本地开发：`npx wrangler pages dev dist`
+- 云端部署：Cloudflare Dashboard
+
+历史兼容：Netlify Functions 配置保留，仍可部署到 Netlify。
+
+---
+
 *Last updated: 2026-05-23*
