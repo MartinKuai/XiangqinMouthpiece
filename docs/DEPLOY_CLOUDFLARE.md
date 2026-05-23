@@ -35,7 +35,7 @@
 普通变量已由 `wrangler.toml` 的 `[vars]` 管理，部署时自动注入：
 - `MODEL_PROVIDER` = `mimo`
 - `MODEL_BASE_URL` = `https://api.xiaomimimo.com/v1`
-- `MODEL_NAME` = `mimo-v2.5-pro`
+- `MODEL_NAME` = `mimo-v2-flash`
 - `MODEL_TEMPERATURE` = `0.85`
 - `MODEL_MAX_TOKENS` = `700`
 
@@ -89,7 +89,7 @@ cp .dev.vars.example .dev.vars
 MODEL_PROVIDER=mimo
 MODEL_API_KEY=你的API Key
 MODEL_BASE_URL=https://api.xiaomimimo.com/v1
-MODEL_NAME=mimo-v2.5-pro
+MODEL_NAME=mimo-v2-flash
 MODEL_TEMPERATURE=0.85
 MODEL_MAX_TOKENS=700
 DEMO_ACCESS_CODE=你的访问码（可选）
