@@ -1,10 +1,10 @@
 const MAX_MESSAGE_LENGTH = 120
 
 // JSON 响应 helper
-function json(data, status = 200) {
+function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
   })
 }
 
@@ -44,7 +44,7 @@ function buildSafeFallbackCards() {
 
 // 安全兜底响应
 function safeFallbackResponse() {
-  return json({
+  return jsonResponse({
     fallback: true,
     code: 'SAFE_FALLBACK',
     message: '这句有点冲，已切换为克制版回复。',
@@ -158,74 +158,83 @@ function clampMaxTokens(raw) {
 }
 
 export async function onRequestPost(context) {
-  const { request, env } = context
-
-  // 生成请求 ID（用于日志追踪，不含敏感信息）
-  const requestId = Math.random().toString(36).slice(2, 10)
-
-  // 解析请求体
-  let body
   try {
-    body = await request.json()
-  } catch (e) {
-    return json({ error: '请求格式错误' }, 400)
-  }
+    const { request, env } = context
 
-  const { message, scenario, perspective, intensity } = body
-  // 兼容前端 inviteCode 和 accessCode 两种字段名
-  const submittedCode = body.inviteCode ?? body.accessCode ?? ''
+    // 生成请求 ID（用于日志追踪，不含敏感信息）
+    const requestId = Math.random().toString(36).slice(2, 10)
 
-  // 输入校验
-  if (!message || message.trim() === '') {
-    return json({ error: '请输入相亲对象的发言' }, 400)
-  }
+    // 解析请求体
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      return jsonResponse({ error: '请求格式错误' }, 400)
+    }
 
-  if (message.length > MAX_MESSAGE_LENGTH) {
-    return json({ error: `输入不能超过${MAX_MESSAGE_LENGTH}字` }, 400)
-  }
+    const { message, scenario, perspective, intensity } = body
+    // 兼容前端 inviteCode 和 accessCode 两种字段名
+    const submittedCode = body.inviteCode ?? body.accessCode ?? ''
 
-  // 访问码校验（兼容 DEMO_ACCESS_CODE 和 DEMO_INVITE_CODE）
-  const expectedCode = (env.DEMO_ACCESS_CODE || env.DEMO_INVITE_CODE || '').trim()
-  if (expectedCode && submittedCode !== expectedCode) {
-    return json({ error: '访问码不正确，无法生成。' }, 401)
-  }
+    // 输入校验
+    if (!message || message.trim() === '') {
+      return jsonResponse({ error: '请输入相亲对象的发言' }, 400)
+    }
 
-  // 读取环境变量
-  const apiKey = env.MODEL_API_KEY
-  const baseUrl = (env.MODEL_BASE_URL || '').replace(/\/+$/, '')
-  const model = env.MODEL_NAME
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return jsonResponse({ error: `输入不能超过${MAX_MESSAGE_LENGTH}字` }, 400)
+    }
 
-  if (!apiKey) {
-    return json({ error: '服务端模型 API Key 未配置。' }, 500)
-  }
+    // 访问码校验（兼容 DEMO_ACCESS_CODE 和 DEMO_INVITE_CODE）
+    const expectedCode = (env.DEMO_ACCESS_CODE || env.DEMO_INVITE_CODE || '').trim()
+    if (expectedCode && submittedCode !== expectedCode) {
+      return jsonResponse({ error: '访问码不正确，无法生成。' }, 401)
+    }
 
-  if (!baseUrl) {
-    return json({ error: '服务端模型 Base URL 未配置。' }, 500)
-  }
+    // 读取环境变量并校验
+    const apiKey = env.MODEL_API_KEY
+    const baseUrl = (env.MODEL_BASE_URL || '').replace(/\/+$/, '')
+    const model = env.MODEL_NAME
 
-  if (!model) {
-    return json({ error: '服务端模型名称未配置。' }, 500)
-  }
+    if (!apiKey) {
+      return jsonResponse({
+        error: '服务端模型 API Key 未配置。',
+        code: 'MISSING_API_KEY',
+      }, 500)
+    }
 
-  const temperature = clampTemperature(env.MODEL_TEMPERATURE)
-  const maxTokens = clampMaxTokens(env.MODEL_MAX_TOKENS)
+    if (!baseUrl) {
+      return jsonResponse({
+        error: '服务端模型 Base URL 未配置。',
+        code: 'MISSING_BASE_URL',
+      }, 500)
+    }
 
-  // 构建用户消息
-  let userMessage = `【用户输入】\n${message}`
-  if (scenario) {
-    userMessage += `\n\n【场景】\n${scenario}`
-  }
-  if (perspective && perspective !== '不指定') {
-    userMessage += `\n\n【用户视角】\n${perspective}`
-  }
-  if (intensity) {
-    userMessage += `\n\n【冒犯强度】\n${intensity}`
-  }
+    if (!model) {
+      return jsonResponse({
+        error: '服务端模型名称未配置。',
+        code: 'MISSING_MODEL_NAME',
+      }, 500)
+    }
 
-  // 调用 Mimo OpenAI-compatible API
-  const endpoint = `${baseUrl}/chat/completions`
+    const temperature = clampTemperature(env.MODEL_TEMPERATURE)
+    const maxTokens = clampMaxTokens(env.MODEL_MAX_TOKENS)
 
-  try {
+    // 构建用户消息
+    let userMessage = `【用户输入】\n${message}`
+    if (scenario) {
+      userMessage += `\n\n【场景】\n${scenario}`
+    }
+    if (perspective && perspective !== '不指定') {
+      userMessage += `\n\n【用户视角】\n${perspective}`
+    }
+    if (intensity) {
+      userMessage += `\n\n【冒犯强度】\n${intensity}`
+    }
+
+    // 调用 Mimo OpenAI-compatible API
+    const endpoint = `${baseUrl}/chat/completions`
+
     console.log('[generate] request', {
       requestId,
       messageLength: message.length,
@@ -234,30 +243,46 @@ export async function onRequestPost(context) {
       maxTokens,
     })
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage },
-        ],
-        temperature,
-        max_tokens: maxTokens,
-      }),
-    })
+    let response
+    try {
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userMessage },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        }),
+      })
+    } catch (fetchError) {
+      console.error('[generate] fetch error', fetchError.message)
+      return jsonResponse({
+        error: '无法连接模型服务。',
+        code: 'MIMO_FETCH_ERROR',
+        detail: fetchError.message,
+      }, 502)
+    }
 
+    // 处理上游非 2xx 响应
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const errorMsg = errorData?.error?.message || ''
+      let errorMsg = ''
+      try {
+        const errorData = await response.json()
+        errorMsg = errorData?.error?.message || ''
+      } catch (e) {
+        // 忽略 JSON 解析失败
+      }
 
       // 内容安全拒绝
       if (response.status === 400 && (errorMsg.includes('safety') || errorMsg.includes('content') || errorMsg.includes('filter') || errorMsg.includes('reject'))) {
-        return json({
+        return jsonResponse({
           error: '这类输入可能触发内容安全策略',
           code: 'CONTENT_SAFETY_BLOCKED',
           message: '这句话包含明显辱骂或人身攻击，模型可能拒绝生成。你可以把原话改成场景描述后再试，例如："对方用脏话骂我，我想礼貌但有边界地回一句。"',
@@ -265,21 +290,32 @@ export async function onRequestPost(context) {
       }
 
       console.error('[generate] upstream error', response.status, response.statusText)
-      return json({
-        error: 'AI服务暂时不可用',
-        code: 'MODEL_ERROR',
-        message: '模型暂时无法处理这类输入，建议换一种描述方式再试。',
+      return jsonResponse({
+        error: '模型服务返回错误。',
+        code: 'MIMO_HTTP_ERROR',
+        detail: `status: ${response.status}`,
       }, 502)
     }
 
-    const data = await response.json()
-    const content = data.choices[0]?.message?.content
+    // 解析上游响应
+    let data
+    try {
+      data = await response.json()
+    } catch (e) {
+      console.error('[generate] upstream json parse error', e.message)
+      return jsonResponse({
+        error: '模型服务返回格式错误。',
+        code: 'MIMO_UPSTREAM_PARSE_ERROR',
+      }, 502)
+    }
+
+    const content = data.choices?.[0]?.message?.content
 
     if (!content) {
-      return json({
-        error: 'AI返回内容为空',
-        code: 'EMPTY_RESPONSE',
-        message: '模型未返回有效内容，请换一种描述方式再试。',
+      console.log('[generate] empty response', { requestId })
+      return jsonResponse({
+        error: '模型服务未返回有效内容。',
+        code: 'MIMO_EMPTY_RESPONSE',
       }, 502)
     }
 
@@ -294,28 +330,41 @@ export async function onRequestPost(context) {
           result = JSON.parse(jsonMatch[0])
         } catch (e2) {
           console.log('[generate] fallback', { requestId, reason: 'JSON parse failed after extraction' })
-          return safeFallbackResponse()
+          return jsonResponse({
+            error: '模型返回内容无法解析。',
+            code: 'MODEL_OUTPUT_INVALID_JSON',
+          }, 500)
         }
       } else {
         console.log('[generate] fallback', { requestId, reason: 'no JSON found in response' })
-        return safeFallbackResponse()
+        return jsonResponse({
+          error: '模型返回内容无法解析。',
+          code: 'MODEL_OUTPUT_INVALID_JSON',
+        }, 500)
       }
     }
 
     // 验证返回结构
     if (!result.cards || !Array.isArray(result.cards) || result.cards.length !== 4) {
       console.log('[generate] fallback', { requestId, reason: 'invalid cards structure' })
-      return safeFallbackResponse()
+      return jsonResponse({
+        error: '模型返回内容无法解析。',
+        code: 'MODEL_OUTPUT_INVALID_SCHEMA',
+      }, 500)
     }
 
     console.log('[generate] success', { requestId })
-    return json(result)
+    return jsonResponse(result)
   } catch (error) {
-    console.error('[generate] internal error:', error.message)
-    return json({
-      error: '生成失败',
-      code: 'INTERNAL_ERROR',
-      message: '服务暂时不可用，请稍后再试。',
+    console.error('UNHANDLED_GENERATE_ERROR', {
+      name: error?.name,
+      message: error?.message,
+    })
+
+    return jsonResponse({
+      error: '服务端生成接口异常，请稍后重试。',
+      code: 'UNHANDLED_FUNCTION_ERROR',
+      detail: error?.message || 'Unknown error',
     }, 500)
   }
 }
