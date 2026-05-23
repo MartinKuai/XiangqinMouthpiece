@@ -274,20 +274,53 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: '访问码不正确，无法生成。', code: 'INVALID_ACCESS_CODE' }, 401)
     }
 
-    // ── 环境变量校验 ────────────────────────────────────────────────────────
+    // ── 环境变量与 Mock 校验 ──────────────────────────────────────────────────
     const apiKey = env.MODEL_API_KEY
     const baseUrl = (env.MODEL_BASE_URL || '').replace(/\/+$/, '')
     const modelName = env.MODEL_NAME
 
-    if (!apiKey) {
-      return jsonResponse({ error: '服务端模型 API Key 未配置。', code: 'MISSING_API_KEY' }, 500)
+    // 优先判断是否启用 Mock，或者缺少必要的环境变量时退化为 Mock
+    const isMock = env.MOCK_API === 'true' || !apiKey || !baseUrl || !modelName
+
+    if (isMock) {
+      console.log('[generate] Using Mock API', { requestId, reason: env.MOCK_API === 'true' ? 'MOCK_API=true' : 'Missing Env' })
+      return jsonResponse({
+        cards: [
+          {
+            type: '真发版',
+            reply: '刚好够花，你也是来对账的吗？',
+            styleTag: '温和化解',
+            sceneNote: '用轻松反问化解查户口',
+            riskLevel: '适合真发'
+          },
+          {
+            type: '阴阳版',
+            reply: '怎么，你打算给我发工资吗？',
+            styleTag: '微讽边界',
+            sceneNote: '暗示对方管得宽，不客气',
+            riskLevel: '看关系'
+          },
+          {
+            type: '日常脑回路错位版',
+            reply: '稍等，我问下我财务（指我妈）。',
+            styleTag: '生活类比',
+            sceneNote: '假装听不懂，用荒谬的理由糊弄',
+            riskLevel: '看关系'
+          },
+          {
+            type: '抽象整活版',
+            reply: '我工资？我每天去寺庙功德箱里进货。',
+            styleTag: '抽象整活',
+            sceneNote: '纯纯离谱，让对话无法进行',
+            riskLevel: '仅供整活'
+          }
+        ],
+        safetyNote: '注意：当前为 Mock 数据，未请求真实大模型。'
+      })
     }
-    if (!baseUrl) {
-      return jsonResponse({ error: '服务端模型 Base URL 未配置。', code: 'MISSING_BASE_URL' }, 500)
-    }
-    if (!modelName) {
-      return jsonResponse({ error: '服务端模型名称未配置。', code: 'MISSING_MODEL_NAME' }, 500)
-    }
+
+    // TODO: 后续可将下方真实调用逻辑拆分到 functions/_lib/providers/mimo.js
+    // TODO: switch by MODEL_PROVIDER=mimo/deepseek
 
     const temperature = clampTemperature(env.MODEL_TEMPERATURE)
     const maxTokens = clampMaxTokens(env.MODEL_MAX_TOKENS)
