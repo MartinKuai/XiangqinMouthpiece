@@ -32,22 +32,21 @@
 
 ### 3. 配置环境变量
 
-在 **Settings** → **Environment variables** 中配置：
+普通变量已由 `wrangler.toml` 的 `[vars]` 管理，部署时自动注入：
+- `MODEL_PROVIDER` = `mimo`
+- `MODEL_BASE_URL` = `https://api.xiaomimimo.com/v1`
+- `MODEL_NAME` = `mimo-v2.5-pro`
+- `MODEL_TEMPERATURE` = `0.85`
+- `MODEL_MAX_TOKENS` = `700`
 
-#### 非敏感变量（Plain text）
+**只需要在 Dashboard 中添加 Secret：**
 
-| 变量名 | 值 |
-|--------|-----|
-| `MODEL_PROVIDER` | `mimo` |
-| `MODEL_BASE_URL` | 从 Mimo 控制台获取的 Base URL |
-| `MODEL_NAME` | 从 Mimo 控制台获取的模型名 |
+在 **Settings** → **Environment variables** 中配置（标记为 Encrypted）：
 
-#### 敏感变量（Encrypted / Secret）
-
-| 变量名 | 值 |
-|--------|-----|
-| `MODEL_API_KEY` | 你的 Mimo API Key |
-| `DEMO_ACCESS_CODE` | 访问码（可选，设置后启用访问控制） |
+| 变量名 | 值 | 说明 |
+|--------|-----|------|
+| `MODEL_API_KEY` | 你的 Mimo API Key | **必须，Secret** |
+| `DEMO_ACCESS_CODE` | 演示访问码 | **可选但建议，Secret** |
 
 > **重要**：`MODEL_API_KEY` 和 `DEMO_ACCESS_CODE` 必须标记为加密/Secret，不能暴露在前端代码中。
 
@@ -60,13 +59,15 @@
 
 ## 环境变量说明
 
-| 变量名 | 必填 | 说明 | 是否敏感 |
-|--------|------|------|----------|
-| `MODEL_PROVIDER` | 否 | 模型提供商标识 | 否 |
-| `MODEL_API_KEY` | 是 | API Key | **是** |
-| `MODEL_BASE_URL` | 是 | OpenAI-compatible Base URL | 否 |
-| `MODEL_NAME` | 是 | 模型名称 | 否 |
-| `DEMO_ACCESS_CODE` | 否 | 演示访问码 | **是** |
+| 变量名 | 必填 | 说明 | 来源 | 是否敏感 |
+|--------|------|------|------|----------|
+| `MODEL_PROVIDER` | 否 | 模型提供商标识 | wrangler.toml `[vars]` | 否 |
+| `MODEL_BASE_URL` | 是 | OpenAI-compatible Base URL | wrangler.toml `[vars]` | 否 |
+| `MODEL_NAME` | 是 | 模型名称 | wrangler.toml `[vars]` | 否 |
+| `MODEL_TEMPERATURE` | 否 | 生成温度（0~2） | wrangler.toml `[vars]` | 否 |
+| `MODEL_MAX_TOKENS` | 否 | 最大 token 数 | wrangler.toml `[vars]` | 否 |
+| `MODEL_API_KEY` | 是 | Mimo API Key | Dashboard Secret | **是** |
+| `DEMO_ACCESS_CODE` | 否 | 演示访问码 | Dashboard Secret | **是** |
 
 ## 本地开发
 
@@ -88,7 +89,9 @@ cp .dev.vars.example .dev.vars
 MODEL_PROVIDER=mimo
 MODEL_API_KEY=你的API Key
 MODEL_BASE_URL=https://api.xiaomimimo.com/v1
-MODEL_NAME=mimo-v2-flash
+MODEL_NAME=mimo-v2.5-pro
+MODEL_TEMPERATURE=0.85
+MODEL_MAX_TOKENS=700
 DEMO_ACCESS_CODE=你的访问码（可选）
 ```
 

@@ -45,7 +45,9 @@ cp .dev.vars.example .dev.vars
 MODEL_PROVIDER=mimo
 MODEL_API_KEY=你的Mimo API Key
 MODEL_BASE_URL=https://api.xiaomimimo.com/v1
-MODEL_NAME=mimo-v2-flash
+MODEL_NAME=mimo-v2.5-pro
+MODEL_TEMPERATURE=0.85
+MODEL_MAX_TOKENS=700
 DEMO_ACCESS_CODE=可选访问码
 ```
 
@@ -103,14 +105,11 @@ npm run build
 4. 配置构建设置：
    - Build command: `npm run build`
    - Build output directory: `dist`
-5. 设置环境变量：
+5. 普通变量已由 `wrangler.toml` 自动注入，只需在 Dashboard 中添加 Secret：
 
    | 变量名 | 值 | 标记为 Secret |
    |--------|-----|---------------|
-   | `MODEL_PROVIDER` | `mimo` | **否** |
-   | `MODEL_BASE_URL` | 从 Mimo 控制台获取 | **否** |
-   | `MODEL_NAME` | 从 Mimo 控制台获取 | **否** |
-   | `MODEL_API_KEY` | 你的 API Key | **是（必须）** |
+   | `MODEL_API_KEY` | 你的 Mimo API Key | **是（必须）** |
    | `DEMO_ACCESS_CODE` | 演示访问码（可选） | **是（建议）** |
 6. 部署
 

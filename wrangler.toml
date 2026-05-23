@@ -1,3 +1,10 @@
 name = "xiangqin-mouthpiece"
 compatibility_date = "2025-05-01"
 pages_build_output_dir = "dist"
+
+[vars]
+MODEL_PROVIDER = "mimo"
+MODEL_BASE_URL = "https://api.xiaomimimo.com/v1"
+MODEL_NAME = "mimo-v2.5-pro"
+MODEL_TEMPERATURE = "0.85"
+MODEL_MAX_TOKENS = "700"
