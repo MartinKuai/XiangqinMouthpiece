@@ -62,7 +62,8 @@ export async function onRequestPost(context) {
       } else {
         console.warn(`[generate] Unknown provider: "${provider}", falling back to mock`)
         result = await generateMockReply(params)
-        result.safetyNote = `[配置错误] 未知 Provider: "${provider}"，已回退到 Mock。`
+        result.fallback = true
+        result.message = `[配置错误] 未知 Provider: "${provider}"，已回退到 Mock。`
       }
     } catch (e) {
       console.error(`[generate] Provider error (${provider}):`, e)
@@ -72,16 +73,17 @@ export async function onRequestPost(context) {
       
       const errCode = e.body?.code || e.code || 'UNKNOWN_ERR'
       const errMsg = e.body?.error || e.message || String(e)
-      // Add friendly user note WITH debug info since user is troubleshooting
-      result.safetyNote = `请求 ${provider} 失败，已切换为演示回复。(Debug: ${errCode} - ${errMsg})`
+      
+      result.fallback = true
+      result.message = `请求 ${provider} 失败，已切换为演示回复。(Debug: ${errCode} - ${errMsg})`
       
       // Add debug info if enabled
       if (debug) {
         result.debug = {
           failedProvider: provider,
           errorStatus: e.status || 500,
-          errorCode: e.body?.code || 'UNKNOWN_ERROR',
-          errorMessage: e.body?.error || e.message || String(e)
+          errorCode: errCode,
+          errorMessage: errMsg
         }
       }
     }
@@ -102,7 +104,8 @@ export async function onRequestPost(context) {
           riskLevel: '安全'
         }
       ],
-      safetyNote: '服务异常，目前显示的是兜底回复。',
+      fallback: true,
+      message: '服务异常，目前显示的是兜底回复。',
       error: '服务端生成接口异常，请稍后重试。',
       code: 'UNHANDLED_FUNCTION_ERROR',
       ...(debug && { detail: error?.message || 'Unknown error' })
