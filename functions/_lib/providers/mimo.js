@@ -181,12 +181,10 @@ export async function generateMimoReply({ message, scenario, perspective, intens
     const body = {
       error: '模型响应解析失败，未找到有效文本。',
       code: 'MIMO_RESPONSE_PARSE_FAILED',
-    }
-    if (debug) {
-      body.debug = { 
+      debug: { 
         model: modelName, 
         upstreamStatus: upstreamResponse.status, 
-        topLevelKeys: Object.keys(upstreamData),
+        topLevelKeys: Object.keys(upstreamData || {}),
         ...diag 
       }
     }
