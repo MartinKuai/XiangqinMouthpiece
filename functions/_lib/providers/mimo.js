@@ -14,7 +14,8 @@ function clampTemperature(raw) {
 
 function clampMaxTokens(raw) {
   const n = Number(raw)
-  if (Number.isNaN(n) || n < 200 || n > 1200) return 700
+  // 适配深度思考模型，放宽最大 Token 限制
+  if (Number.isNaN(n) || n < 200 || n > 8192) return 4096
   return n
 }
 
