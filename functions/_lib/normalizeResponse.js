@@ -91,23 +91,48 @@ export const SYSTEM_PROMPT = `你是"相亲嘴替"，一个帮用户应对相亲
 - 只输出JSON，不要输出Markdown或其他内容`
 
 export function extractModelContent(data) {
-  const content = data.choices?.[0]?.message?.content
-  if (content) return content
-
-  const messageContent = data.choices?.[0]?.message?.content
-  if (Array.isArray(messageContent)) {
-    const textParts = messageContent
+  // 1. OpenAI Chat Completions:
+  let content = data?.choices?.[0]?.message?.content
+  if (content && typeof content === 'string') return content
+  
+  // 1.5 Handle array content (OpenAI multimodal/reasoning)
+  if (Array.isArray(content)) {
+    const textParts = content
       .filter((p) => p.type === 'text' && p.text)
       .map((p) => p.text)
     if (textParts.length > 0) return textParts.join('')
   }
+  
+  // Anthropic style inside OpenAI message?
+  if (data?.choices?.[0]?.message?.content?.[0]?.text) {
+     return data.choices[0].message.content[0].text
+  }
 
-  const oldText = data.choices?.[0]?.text
-  if (oldText) return oldText
+  // 2. OpenAI legacy / completions-like:
+  if (data?.choices?.[0]?.text) return data.choices[0].text
+  
+  // 3. Responses API-like:
+  if (data?.output_text) return data.output_text
+  
+  // 4. Anthropic-like:
+  if (Array.isArray(data?.content)) {
+    const textParts = data.content
+      .filter((p) => p.type === 'text' && p.text)
+      .map((p) => p.text)
+    if (textParts.length > 0) return textParts.join('')
+  }
+  if (data?.content && typeof data.content === 'string') return data.content
+  
+  // 5. Some APIs wrap everything in 'data'
+  if (data?.data?.choices?.[0]?.message?.content) return data.data.choices[0].message.content
+  if (data?.data?.content) return data.data.content
 
-  if (data.output_text) return data.output_text
+  // 6. Generic output field
+  if (data?.output) return typeof data.output === 'string' ? data.output : JSON.stringify(data.output)
+  if (data?.completion) return data.completion
 
-  return null
+  // Return empty string if not found, let caller handle error
+  return ''
 }
 
 export function buildDiagnosticInfo(data) {

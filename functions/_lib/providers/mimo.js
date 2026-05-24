@@ -87,6 +87,53 @@ export async function generateMimoReply({ message, scenario, perspective, intens
 
   const upstreamText = await upstreamResponse.text()
 
+  // [debugOnly] 安全诊断日志
+  if (true) {
+    let topLevelKeys = []
+    let choicesExists = false
+    let choicesLength = 0
+    let choice0Keys = []
+    let messageKeys = []
+    let contentType = typeof upstreamText
+    let contentLength = upstreamText?.length || 0
+    let possibleTextPaths = {}
+
+    try {
+      const j = JSON.parse(upstreamText)
+      topLevelKeys = Object.keys(j)
+      choicesExists = Array.isArray(j.choices)
+      choicesLength = j.choices?.length || 0
+      if (choicesLength > 0) {
+        choice0Keys = Object.keys(j.choices[0] || {})
+        messageKeys = Object.keys(j.choices[0]?.message || {})
+      }
+      possibleTextPaths = {
+        'choices[0].message.content': typeof j.choices?.[0]?.message?.content,
+        'choices[0].text': typeof j.choices?.[0]?.text,
+        'output_text': typeof j.output_text,
+        'output': typeof j.output,
+        'content': typeof j.content,
+        'message.content': typeof j.message?.content,
+        'completion': typeof j.completion
+      }
+    } catch(e) {}
+
+    console.log('[mimo debugOnly]', {
+      requestId,
+      status: upstreamResponse.status,
+      contentType: upstreamResponse.headers.get('content-type'),
+      topLevelKeys,
+      choicesExists,
+      choicesLength,
+      choice0Keys,
+      messageKeys,
+      contentType,
+      contentLength,
+      possibleTextPaths,
+      preview: upstreamText.slice(0, 300)
+    })
+  }
+
   if (!upstreamResponse.ok) {
     console.error('[mimo] upstream error', { requestId, status: upstreamResponse.status, model: modelName })
     throw {
@@ -132,11 +179,16 @@ export async function generateMimoReply({ message, scenario, perspective, intens
   if (!content) {
     const diag = buildDiagnosticInfo(upstreamData)
     const body = {
-      error: '模型服务未返回有效内容。',
-      code: 'MIMO_EMPTY_RESPONSE',
+      error: '模型响应解析失败，未找到有效文本。',
+      code: 'MIMO_RESPONSE_PARSE_FAILED',
     }
     if (debug) {
-      body.debug = { model: modelName, upstreamStatus: upstreamResponse.status, ...diag }
+      body.debug = { 
+        model: modelName, 
+        upstreamStatus: upstreamResponse.status, 
+        topLevelKeys: Object.keys(upstreamData),
+        ...diag 
+      }
     }
     throw { isExpected: true, status: 502, body }
   }
