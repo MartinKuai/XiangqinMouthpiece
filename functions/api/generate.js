@@ -53,13 +53,16 @@ export async function onRequestPost(context) {
     try {
       if (provider === 'mock') {
         result = await generateMockReply(params)
-      } else if (provider === 'mimo') {
+      } else if (provider.trim() === 'mimo') {
+        provider = 'mimo' // Fix any trailing spaces
         result = await generateMimoReply(params)
-      } else if (provider === 'deepseek') {
+      } else if (provider.trim() === 'deepseek') {
+        provider = 'deepseek'
         result = await generateDeepseekReply(params)
       } else {
-        console.warn(`[generate] Unknown provider: ${provider}, falling back to mock`)
+        console.warn(`[generate] Unknown provider: "${provider}", falling back to mock`)
         result = await generateMockReply(params)
+        result.safetyNote = `[配置错误] 未知 Provider: "${provider}"，已回退到 Mock。`
       }
     } catch (e) {
       console.error(`[generate] Provider error (${provider}):`, e)
@@ -67,8 +70,10 @@ export async function onRequestPost(context) {
       // Fallback to Mock gracefully
       result = await generateMockReply(params)
       
-      // Add friendly user note
-      result.safetyNote = '当前 AI 服务暂不可用，已切换为演示回复。'
+      const errCode = e.body?.code || e.code || 'UNKNOWN_ERR'
+      const errMsg = e.body?.error || e.message || String(e)
+      // Add friendly user note WITH debug info since user is troubleshooting
+      result.safetyNote = `请求 ${provider} 失败，已切换为演示回复。(Debug: ${errCode} - ${errMsg})`
       
       // Add debug info if enabled
       if (debug) {
