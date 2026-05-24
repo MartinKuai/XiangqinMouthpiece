@@ -73,9 +73,10 @@ export async function onRequestPost(context) {
       
       const errCode = e.body?.code || e.code || 'UNKNOWN_ERR'
       const errMsg = e.body?.error || e.message || String(e)
+      const debugInfo = e.body?.debug ? JSON.stringify(e.body.debug) : ''
       
       result.fallback = true
-      result.message = `请求 ${provider} 失败，已切换为演示回复。(Debug: ${errCode} - ${errMsg})`
+      result.message = `请求 ${provider} 失败，已切换为演示回复。(Debug: ${errCode} - ${errMsg} ${debugInfo})`
       
       // Add debug info if enabled
       if (debug) {
@@ -83,7 +84,8 @@ export async function onRequestPost(context) {
           failedProvider: provider,
           errorStatus: e.status || 500,
           errorCode: errCode,
-          errorMessage: errMsg
+          errorMessage: errMsg,
+          upstreamDebug: e.body?.debug
         }
       }
     }
